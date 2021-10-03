@@ -2,6 +2,9 @@ from PyQt5.QtCore import QPointF, Qt, QRectF, QSizeF, QEvent, QRect
 from PyQt5.QtGui import QPixmap, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QGraphicsItem, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene
 
+import numpy as np
+import cv2
+from PIL import Image, ImageQt
 
 class ImageView(QGraphicsView):
     def __init__(self, *args, **kwargs):
@@ -11,16 +14,30 @@ class ImageView(QGraphicsView):
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        self.pixmap = QPixmap(image)
 
-        self._scene = QGraphicsScene(self)  # 场景
+
+        # func 1
+        # self.pixmap = QPixmap(image)
+
+        # func2
+        arr = cv2.imread(image)
+        arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
+        pil = Image.fromarray(arr)
+        qimage = ImageQt.toqimage(pil)
+        qimage = qimage.scaled(self.width(), self.height(), Qt.KeepAspectRatio)
+        self.pixmap = QPixmap.fromImage(qimage)
+
+        # func3
+        # ppp = Image.open(image).convert("RGB")
+        # self.pixmap = ImageQt.toqpixmap(ppp)
+
+        self._scene = QGraphicsScene()  # 场景
         self._scene.addPixmap(self.pixmap)
 
         self.setScene(self._scene)
 
         # self.fitInView(QRectF(QPointF(0, 0), QSizeF(self.pixmap.size())), Qt.KeepAspectRatio)
-        self.fitInView(QRectF(QPointF(0, 0), QSizeF(self.pixmap.size())), Qt.KeepAspectRatioByExpanding)
+        # self.fitInView(QRectF(QPointF(0, 0), QSizeF(self.pixmap.size())), Qt.KeepAspectRatioByExpanding)
         # self.fitInView(QRectF(QPointF(0, 0), QSizeF(self.pixmap.size())), Qt.IgnoreAspectRatio)
 
     def fitInView(self, rect, flags=Qt.IgnoreAspectRatio):
@@ -31,6 +48,9 @@ class ImageView(QGraphicsView):
         viewRect = self.viewport().rect()
 
         sceneRect = self.transform().mapRect(rect)
+
+        print(f"view:{viewRect.size()}")
+        print(f"scene:{sceneRect.size()}")
 
         x_ratio = viewRect.width() / sceneRect.width()
         y_ratio = viewRect.height() / sceneRect.height()
